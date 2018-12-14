@@ -10,7 +10,8 @@ export default {
             this.loadData(false);
         },
         dataUrl() {
-            this.loadData(false);
+            // this.loadData(false);
+            this.loadData(true);
         }
     },
     methods: {

@@ -1,8 +1,7 @@
-
 <template>
     <div class="release-comment-container">
         <quill-editor
-            v-focus="this.$store.state.ModulePopup.commentLevel2Popup"
+            v-focus="this.$store.state.ModulePopup.commentLevel3Popup"
             ref="commentsEditor"
             v-model="content"
             :options="editorOption"
@@ -33,9 +32,11 @@
     import loadData from '../../assets/js/loadData';
 
     export default {
-        name: 'release-comment',
+        name: 'releaseLevel3Comment',
         mixins: [loadData],
-        components: {quillEditor},
+        components: {
+            quillEditor
+        },
         data() {
             return {
                 content: '',
@@ -58,16 +59,6 @@
                 editor.addEventListener('focus', this.focusEditorEvent, false);
             });
         },
-        // computed: {
-        //     commentsID: {
-        //         get() {
-        //             return this.$store.ModuleComment.commentId
-        //         },
-        //         set(val) {
-        //             this.$store.commit("optSubComments", {commentId: val})
-        //         }
-        //     }
-        // },
         methods: {
             editorChangeEvent(p) {
                 if (!this.isInsertEmoji) {
@@ -103,21 +94,20 @@
                 document.body.scrollTop = document.body.scrollHeight;
             },
             releaseEvent() {
-                let url = process.env.ROOT_API + "comments/receiveComments.do",
-                    param = {
-                        articleID: this.$route.query.id,
-                        content: this.comment,
-                        commentsID: this.$store.state.ModuleComment.commentId
-                    },
+                let url = process.env.ROOT_API + 'comments/receiveSubComments.do',
+                    commentsID = this.$store.state.ModuleLevel3Comment.fatherCommentId,
+                    subCommentsID = this.$store.state.ModuleLevel3Comment.commentId,
+                    param = {articleID: this.$route.query.id, content: this.comment, commentsID, subCommentsID},
                     success = resp => {
-                        this.$toast("回复成功");
-                        this.$store.commit("reloadSubComments");
-                        this.$store.commit("togglePopup", {commentLevel2Popup: false});
-                        this.$store.commit('reloadComments')
-                        this.$store.commit('releaseSubComments')
+                        this.$toast("发表成功");
+                        this.$store.commit("togglePopup", {commentLevel3Popup: false});
+                        this.$store.commit('reloadSubComments')
                         this.content = "";
+                    },
+                    error = () => {
+                        this.$toast('发表失败！')
                     };
-                this.sendPost({url, param, success});
+                this.sendPost({url, param, success, error});
             }
         },
         directives: {

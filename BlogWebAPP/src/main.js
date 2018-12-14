@@ -10,10 +10,11 @@ import App from './App'
 
 import router from './router'
 import loadData from './assets/js/loadData'
-import ModulePopup from './assets/js/ModulePopup';
+import ModulePopup from './assets/js/ModulePopup'
 import ModuleHead from './assets/js/ModuleHead'
 import ModuleArticle from './assets/js/ModuleArticle'
 import ModuleComment from './assets/js/ModuleComment'
+import ModuleLevel3Comment from './assets/js/ModuleLevel3Comment'
 
 import 'font-awesome/css/font-awesome.css'
 
@@ -29,7 +30,8 @@ const
             ModulePopup,
             ModuleHead,
             ModuleArticle,
-            ModuleComment
+            ModuleComment,
+            ModuleLevel3Comment
         }
     }),
     vm = new Vue({

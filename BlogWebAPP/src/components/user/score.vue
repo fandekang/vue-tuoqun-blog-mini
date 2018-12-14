@@ -1,44 +1,52 @@
 <template>
-    <load-more-cell :dataUrl="dataUrl" :auto-fill="false" :top-method="loadTop" :bottom-method="loadBottom" :bottom-all-loaded.sync="allLoaded" ref="loadMore">
-        <template slot-scope="scope">
-            <div class="ranking-list">
-                <div class="ranking-item" v-for="(item, index) in scope.source" :key="item.articleid">
-                    <div class="ranking">{{index + 1}}</div>
-                    <div class="avatar">
-                        <img v-if="item.staffID" :src="root + 'main/getStaffImg.do?staffID=' + item.staffID + '&dt=' + Math.random()" height="60px" width="60px">
-                        <!-- <img v-else src="../../assets/images/pic01.jpg" height="60px" width="60px"> -->
-                    </div>
-                    <div class="info">
-                        <div class="name">{{item.staffName}}</div>
-                        <div class="integration">{{item.isManager}}分</div>
-                    </div>
-                </div>
+    <div class="ranking-list">
+        <div class="ranking-item" v-for="(item, index) in source" :key="item.articleid">
+            <div class="ranking">{{index + 1}}</div>
+            <div class="avatar">
+                <img v-if="item.staffID" :src="root + 'main/getStaffImg.do?staffID=' + item.staffID + '&dt=' + Math.random()" height="60px" width="60px">
+                <img v-else src="../../assets/images/pic01.jpg" height="60px" width="60px">
             </div>
-        </template>
-    </load-more-cell>
+            <div class="info">
+                <div class="name">{{item.staffName}}</div>
+                <div class="integration">{{item.isManager}}分</div>
+            </div>
+            <div class="me" v-if="item.staffID === staffID">我</div>
+        </div>
+    </div>
 </template>
 <script type="text/javascript">
+    import loadData from '../../assets/js/loadData'
+
     export default {
         name: 'score',
+        mixins: [loadData],
         data() {
             return {
-                dataUrl: process.env.ROOT_API + "main/getStaffList.do?random=" + Math.random(),
-                root: process.env.ROOT_API,
-                allLoaded: false,
-                pager: {
-                    curPage: 1,
-                    pageSize: 5
-                },
-                currentIndex: -1
+                source: [],
+                root: process.env.ROOT_API
             }
         },
-        methods: {
-            loadTop() {
-                this.$refs.loadMore.onTopLoaded();
-            },
-            loadBottom() {
-                this.$refs.loadMore.onBottomLoaded();
+        computed: {
+            staffID() {
+                return this.$store.state.ModuleHead.staffID
             }
+        },
+        mounted() {
+            let url = process.env.ROOT_API + "main/getStaffList.do",
+                param = {
+                    pager: {
+                        curPage: 1,
+                        pageSize: 10
+                    }
+                },
+                success = (res) => {
+                    // console.log(res.body.data)
+                    this.source = res.body.data
+                },
+                error = () => {
+                    this.$toast('请求失败')
+                }
+            this.sendPost({url, param, success, error})
         }
     }
 </script>
@@ -87,5 +95,10 @@
     }
     .ranking-item .info .integration {
         font-size: 1.4rem;
+    }
+    .ranking-item .me {
+        margin-left: 20px;
+        font-size: 1.5rem;
+        color: #f63031;
     }
 </style>

@@ -5,11 +5,11 @@ export default {
         like: 0,
         commentPopup: false,
         commentLevel2Popup: false,
-        // subCommentPopup: false,
+        commentLevel3Popup: false,
         subCommentListPopup: false,
         commentFooter: false,
         commentLevel2Footer: false,
-        // subCommentFooter: false,
+        scrollToComments: false,
         loginPopup: false,
         popupManager: []
     },

@@ -46,8 +46,11 @@
     import Score from '../user/score.vue'
     import Personal from '../user/personal.vue'
 
+    import loadData from '../../assets/js/loadData';
+
     export default {
         name: 'main-wrapper',
+        mixins: [loadData],
         components: {
             TypeList,
             BlogList,
@@ -56,6 +59,14 @@
         },
         props: {
             value: {}
+        },
+        mounted() {
+            this.sendGet({
+                url : process.env.ROOT_API + "main/getCurStaff.do",
+                success(response) {
+                    this.$store.commit("toggleUser", response.body.data)
+                }
+            });
         },
         data() {
             return {

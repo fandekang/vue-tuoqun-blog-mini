@@ -15,14 +15,14 @@
             <router-view></router-view>
         </full-popup>
 
-        <!--评论底部-->
+        <!-- 一级评论底部-->
         <transition name="comment-fade">
             <foot-wrapper class="comment-tools-container" v-if="commentFooter">
                 <div class="comment-tools" slot="main">
                     <div @click="toCommentEvent" class="comment-input">
                         <i class="fa fa-pencil"></i>&nbsp;&nbsp;&nbsp;说点什么吧。。。
                     </div>
-                    <div class="comment-tools-icon">
+                    <div class="comment-tools-icon" @click="toCommetList">
                         <i class="fa fa-commenting-o"></i> {{comments}}
                     </div>
                     <div class="comment-tools-icon" style="text-align: left;">
@@ -32,6 +32,19 @@
             </foot-wrapper>
         </transition>
 
+        <!-- 一级评论弹窗-->
+        <mt-popup
+            style="min-height: 150px; width: 100%"
+            v-model="commentPopup"
+            position="bottom">
+            <release-comment></release-comment>
+        </mt-popup>
+
+        <!-- 二级评论列表 -->
+        <full-popup v-model="subCommentListPopup" position="bottom" title="二级评论列表" @back="backArticle">
+            <sub-comments v-if="subCommentListPopup"></sub-comments>
+        </full-popup>
+
         <!-- 二级评论底部 -->
         <transition name="comment-fade">
             <foot-wrapper class="comment-tools-container" v-if="commentLevel2Footer">
@@ -40,22 +53,14 @@
                         <i class="fa fa-pencil"></i>&nbsp;&nbsp;&nbsp;献出你的二级评论吧。。。
                     </div>
                     <div class="comment-tools-icon">
-                        <i class="fa fa-commenting-o"></i>
+                        <i class="fa fa-commenting-o"></i> {{this.$store.state.ModuleComment.receivecount}}
                     </div>
-                    <div class="comment-tools-icon" style="text-align: left;">
-                        <i class="fa fa-thumbs-o-up"></i>
+                    <div class="comment-tools-icon" @click="giveAlike" style="text-align: left;">
+                        <i class="fa fa-thumbs-o-up"></i> {{this.$store.state.ModuleComment.praisecount}}
                     </div>
                 </div>
             </foot-wrapper>
         </transition>
-
-        <!--评论弹窗-->
-        <mt-popup
-            style="min-height: 150px; width: 100%"
-            v-model="commentPopup"
-            position="bottom">
-            <release-comment></release-comment>
-        </mt-popup>
 
         <!-- 二级评论弹窗 -->
         <mt-popup
@@ -65,22 +70,18 @@
             <release-level2-comment></release-level2-comment>
         </mt-popup>
 
-        <!-- 子评论弹窗 -->
-        <!-- <mt-popup
-            style="min-height: 150px; width: 100%"
-            v-model="subCommentPopup"
+        <!-- 三级评论弹窗 -->
+        <mt-popup
+            class="level3-comment"
+            style="min-height: 150px; width: 100%;"
+            v-model="commentLevel3Popup"
             position="bottom">
-            <release-sub-comment></release-sub-comment>
-        </mt-popup> -->
+            <release-level3-comment></release-level3-comment>
+        </mt-popup>
 
         <!--登陆/注册弹窗-->
         <full-popup v-model="loginPopup" :title="this.$store.state.ModuleHead.title">
             <join v-if="loginPopup"></join>
-        </full-popup>
-
-        <!-- 二级评论列表 -->
-        <full-popup v-model="subCommentListPopup" title="二级评论列表" @back="backArticle">
-            <sub-comments v-if="subCommentListPopup"></sub-comments>
         </full-popup>
     </div>
 </template>
@@ -98,6 +99,9 @@
         ReleaseLevel2Comment = resolve => {
             require(["./components/blog/releaseLevel2Comments.vue"], resolve);
         },
+        ReleaseLevel3Comment = resolve => {
+            require(["./components/blog/releaseLevel3Comments.vue"], resolve);
+        },
         Join = resolve => {
             require(["./components/user/join.vue"], resolve);
         },
@@ -112,7 +116,8 @@
             ReleaseComment,
             MainWrapper,
             SubComments,
-            ReleaseLevel2Comment
+            ReleaseLevel2Comment,
+            ReleaseLevel3Comment
         },
         data() {
             return {
@@ -129,12 +134,12 @@
             }
         },
         computed: {
-            subCommentListPopup: {
+            commentLevel3Popup: {
                 get() {
-                    return this.$store.state.ModulePopup.subCommentListPopup;
+                    return this.$store.state.ModulePopup.commentLevel3Popup;
                 },
                 set(val) {
-                    this.$store.commit("togglePopup", {subCommentListPopup: val})
+                    this.$store.commit("togglePopup", {commentLevel3Popup: val})
                 }
             },
             articlePopup: {
@@ -153,6 +158,14 @@
                     if(this.subCommentListPopup) {
                         this.$store.commit("togglePopup", {commentLevel2Footer: !val, commentLevel2Popup: val})
                     }
+                }
+            },
+            subCommentListPopup: {
+                get() {
+                    return this.$store.state.ModulePopup.subCommentListPopup
+                },
+                set(val) {
+                    this.$store.commit('togglePopup', {subCommentListPopup: val})
                 }
             },
             commentPopup: {
@@ -204,10 +217,13 @@
         },
         watch: {
             active(newVal, oldVal) {
-                let checkPageList = ['personal'];
+                let checkPageList = ['personal', 'typeList'];
                 if (checkPageList.indexOf(newVal) > -1) {
                     this.sendGet({
                         url : process.env.ROOT_API + "main/checkLogin.do",
+                        resolve() {
+                            this.$store.commit('reloadTypeListUrl')
+                        },
                         reject(response) {
                             if (response.status === 604) {
                                 this.$toast("您还未登陆或者已经登陆超时");
@@ -224,6 +240,26 @@
             }
         },
         methods: {
+            // 跳转到评论列表的相应位置
+            toCommetList() {
+                this.$store.commit('togglePopup', {scrollToComments: true})
+            },
+            // 对一级评论点赞
+            giveAlike() {
+                let url = process.env.ROOT_API + 'comments/addPraiseCount.do',
+                    param = {
+                        objid: this.$store.state.ModuleComment.commentId
+                    },
+                    success = (data) => {
+                        this.$store.commit('reloadComments')
+                        this.$store.commit('releaseSublike')
+                    },
+                    error = () => {
+                        this.$toast('点赞失败')
+                    }
+
+                this.sendPost({url, param, success, error})
+            },
             backArticle() {
                 this.$store.commit("togglePopup", {commentLevel2Footer: false})
                 this.$store.commit("togglePopup", {commentFooter: true})
@@ -233,7 +269,6 @@
                 this.$router.push({path:"/"});
             },
             toLevel2CommentEvent() {
-                // this.$store.commit("togglePopup", {commentLevel2Footer: false})
                 this.$store.commit("togglePopup", {commentLevel2Popup: true})
             },
             toCommentEvent() {
@@ -337,5 +372,8 @@
     }
     .mint-toast {
         z-index: 3000;
+    }
+    .level3-comment {
+        z-index: 10000 !important;
     }
 </style>

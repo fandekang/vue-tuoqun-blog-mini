@@ -13,7 +13,7 @@ module.exports = {
             '/BlogServerPC/*': { //代理路径
                 target: 'http://101.37.70.52:8082',
                 // target: 'http://192.168.1.101:8080',
-                // target: 'http://192.168.1.134:8080',
+                // target: 'http://192.168.1.177:8080',
                 secure: false,
                 changerOrigin: true,   //改变源
             }
@@ -49,15 +49,13 @@ module.exports = {
 
         cssSourceMap: true
     },
-
     build: {
         // Template for index.html
         index: path.resolve(__dirname, '../dist/index.html'),
-
         // Paths
         assetsRoot: path.resolve(__dirname, '../dist'),
         assetsSubDirectory: 'static',
-        assetsPublicPath: '/',
+        assetsPublicPath: './',
 
         /**
          * Source Maps

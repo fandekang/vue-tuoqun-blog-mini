@@ -66,7 +66,6 @@
         },
         methods: {
             editorChangeEvent(p) {
-//                console.log("change");
                 if (!this.isInsertEmoji) {
                     let _this = this
                     setTimeout(function() {
@@ -77,10 +76,9 @@
                 else {
                     this.isInsertEmoji = false;
                 }
-                console.log(this.comment)
+                // console.log(this.comment)
             },
             selectEmoji(code) {
-//                this.showEmoji = false;
                 // 插入表情
                 // let reg = /^<p>|<\/p>$/;
                 let reg = /<p(([\s\S])*?)>|<\/p>/g;
@@ -104,13 +102,13 @@
                 let url = process.env.ROOT_API + "comments/releaseComment.do",
                     param = {articleID: this.$route.query.id, content: this.comment},
                     success = resp => {
-                        this.$toast("发表成功");
-                        this.$store.commit("togglePopup", {commentPopup: false});
-                        this.$store.commit("reloadComments");
-                        this.$store.commit("releaseComments");
-                        this.content = "";
+                        this.$toast("发表成功")
+                        this.$store.commit("togglePopup", {commentPopup: false})
+                        this.$store.commit("reloadComments")
+                        this.$store.commit("releaseComments")
+                        this.content = ""
                     };
-                this.sendPost({url, param, success});
+                this.sendPost({url, param, success})
             }
         },
         directives: {

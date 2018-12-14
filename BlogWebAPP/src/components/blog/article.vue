@@ -17,7 +17,7 @@
             <hr>
             <p class="article-content" v-html="this.article.content"></p>
         </article>
-        <h6>全部评论</h6>
+        <h6 id="allComments">全部评论</h6>
         <load-more-panel :auto-fill="false" :bottom-all-loaded.sync="allLoaded" :dataUrl="dataUrl" :remoteParam="remoteParam" :pager="pager">
             <panel-wrapper slot-scope="param">
                 <img :onerror="errorImg" :style="{'border-radius': '40px'}" slot="img" :src="getStaffImg(param.item.userid)" height="40px"
@@ -29,9 +29,8 @@
                 <div slot="body" v-html="$AngusVueEmoji(param.item.commentcontent)"></div>
                 <div slot="footer">
                     <div class="sy-panel-footer">
-                        <i class="fa fa-commenting-o" v-if="param.item.receivecount" @click="toCommentList(param.item.commentid)">&nbsp;{{param.item.receivecount}}&nbsp;</i>
-                        <i class="fa fa-commenting-o" v-else>&nbsp;{{param.item.receivecount}}&nbsp;</i>
-                        <i class="fa fa-thumbs-o-up">&nbsp;{{param.item.praisecount}}</i>
+                        <i class="fa fa-commenting-o" @click="toCommentList(param.item.commentid, param.item.receivecount, param.item.praisecount, param.item.username, param.item.commentdate)">&nbsp;{{param.item.receivecount}}&nbsp;</i>
+                        <i class="fa fa-thumbs-o-up" @click="giveAlike(param.item.commentid)">&nbsp;{{param.item.praisecount}}</i>
                     </div>
                 </div>
             </panel-wrapper>
@@ -48,7 +47,6 @@
         components: {subComments},
         data() {
             return {
-                // commentFooter: this.$store.state.ModulePopup.commentFooter,
                 errorImg: `this.src='${noImg}'`,
                 article: {},
                 remoteParam: {articleID: this.$route.query.id},
@@ -59,22 +57,24 @@
                 }
             }
         },
-        // watch: {
-        //     $store() {
-        //         console.log('++++++++++++++++++++++++')
-        //         console.log(this.$store.state.ModulePopup.commentFooter)
-        //         if(!this.commentFooter) {
-        //             this.$store.commit("togglePopup", {commentFooter: true})
-        //         }
-        //     }
-        // },
         computed: {
             dataUrl: {
                 get() {
                     return this.$store.state.ModuleArticle.commentsUrl;
-                },
-                set(val) {
-                    this.$store.commit("reloadComments");
+                }
+            },
+            scrollToComments: {
+                get() {
+                    return this.$store.state.ModulePopup.scrollToComments
+                }
+            }
+        },
+        watch: {
+            // 跳转到评论区, scrollIntoView: 调用元素就可以出现在视窗中
+            scrollToComments() {
+                if(this.scrollToComments) {
+                    document.querySelector('#allComments').scrollIntoView(true)
+                    this.$store.commit('togglePopup', {scrollToComments: false})
                 }
             }
         },
@@ -82,8 +82,9 @@
             getStaffImg(staffId) {
                 return process.env.ROOT_API + "main/getStaffImg.do?dt=" + Math.random() + "&staffID=" + staffId;
             },
-            // 跳转到子评论,  commentid: 一级评论ID
-            toCommentList(commentid) {
+            // 跳转到二级评论,  commentid: 一级评论ID
+            toCommentList(commentid, receivecount, praisecount, username, commentdate) {
+                // 判断是否登录
                 this.sendGet({
                     url : process.env.ROOT_API + "main/checkLogin.do",
                     reject(response) {
@@ -96,20 +97,32 @@
                         }
                     },
                     resolve(res) {
-                        console.log('已登录状态')
-                        this.$store.commit("optSubComments", {articleID: this.$route.query.id, commentId: commentid})
+                        this.$store.commit("optSubComments", {articleID: this.$route.query.id, commentId: commentid, receivecount, praisecount, level1CommentUserName: username, level1CommentDate: commentdate})
                         this.$store.commit("togglePopup", {subCommentListPopup: true})
                         this.$store.commit("togglePopup", {commentLevel2Footer: true})
                         this.$store.commit("togglePopup", {commentFooter: false})
                     }
                 });
+            },
+            // 评论点赞
+            giveAlike(commentid) {
+                let url = process.env.ROOT_API + 'comments/addPraiseCount.do',
+                    param = {
+                        objid: commentid
+                    },
+                    success = (data) => {
+                        this.$store.commit('reloadComments')
+                    },
+                    error = () => {
+                        this.$toast('点赞失败')
+                    }
+                this.sendPost({url, param, success, error})
             }
         },
         mounted() {
             let url = process.env.ROOT_API + 'article/getArticleByID.do?dt=' + Math.random(),
                 param = {objid: this.$route.query.id},
                 success = function(resp) {
-//                    console.log(resp.bodyText)
                     let body = JSON.parse(resp.bodyText)
                     this.article = body.data
                 }
